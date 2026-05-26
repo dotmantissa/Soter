@@ -10,6 +10,7 @@ import httpx
 
 from config import settings
 from services.humanitarian_prompt import HumanitarianPromptEngine
+from services.test_provider import TestProvider
 
 logger = logging.getLogger(__name__)
 
@@ -19,6 +20,7 @@ class HumanitarianVerificationService:
 
     def __init__(self):
         self.prompt_engine = HumanitarianPromptEngine()
+        self.test_provider = TestProvider()
 
     def verify_claim(
         self,
@@ -85,17 +87,23 @@ class HumanitarianVerificationService:
 
     def _provider_attempt_order(self, provider_preference: str) -> List[str]:
         available: List[str] = []
+        if settings.test_provider_mode:
+            available.append("test")
         if settings.openai_api_key:
             available.append("openai")
         if settings.groq_api_key:
             available.append("groq")
 
         preference = (provider_preference or "auto").lower()
-        if preference in ("openai", "groq") and preference in available:
+        if preference == "test" and settings.test_provider_mode:
+            return [preference]
+        if preference in ("openai", "groq", "test") and preference in available:
             return [preference] + [provider for provider in available if provider != preference]
         return available
 
     def _get_model_for_provider(self, provider: str) -> str:
+        if provider == "test":
+            return "test-provider/fixture"
         if provider == "openai":
             return settings.openai_model
         if provider == "groq":
@@ -103,6 +111,8 @@ class HumanitarianVerificationService:
         raise ValueError(f"Unsupported provider: {provider}")
 
     def _call_provider(self, provider: str, model: str, system_prompt: str, user_prompt: str) -> str:
+        if provider == "test":
+            return self._call_test(model, system_prompt, user_prompt)
         if provider == "openai":
             return self._call_openai(model, system_prompt, user_prompt)
         if provider == "groq":
@@ -175,6 +185,16 @@ class HumanitarianVerificationService:
             raise RuntimeError("LLM returned empty content")
 
         return str(content)
+
+    def _call_test(self, model: str, system_prompt: str, user_prompt: str) -> str:
+        response = self.test_provider.get_response(
+            endpoint="humanitarian",
+            request_data={
+                "system_prompt": system_prompt,
+                "user_prompt": user_prompt,
+            },
+        )
+        return json.dumps(response, separators=(",", ":"), sort_keys=True)
 
     def _get_deterministic_response(self, model: str, system_prompt: str, user_prompt: str) -> str:
         stable_response = {

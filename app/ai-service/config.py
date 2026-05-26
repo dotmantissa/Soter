@@ -21,6 +21,7 @@ class Settings(BaseSettings):
         OPENAI_MODEL: Default OpenAI model for humanitarian verification
         GROQ_MODEL: Default Groq model for humanitarian verification
         AI_DETERMINISTIC_MODE: Enable deterministic AI results for verification and classification during tests/CI
+        TEST_PROVIDER_MODE: Enable test provider mode that returns fixture-driven results (no API keys required)
         LLM_TIMEOUT_SECONDS: Timeout for LLM API requests
         APP_ENV: Application environment (development, staging, production)
         LOG_LEVEL: Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
@@ -38,6 +39,7 @@ class Settings(BaseSettings):
     openai_model: str = "gpt-4o-mini"
     groq_model: str = "llama-3.3-70b-versatile"
     ai_deterministic_mode: bool = False
+    test_provider_mode: bool = False
     llm_timeout_seconds: int = 30
     
     # Application settings
@@ -69,12 +71,12 @@ class Settings(BaseSettings):
     
     def validate_api_keys(self) -> bool:
         """
-        Validate that at least one API key is configured
+        Validate that at least one API key or test mode is configured
         
         Returns:
-            bool: True if at least one API key is present, False otherwise
+            bool: True if at least one API key or test mode is present, False otherwise
         """
-        has_key = bool(self.openai_api_key or self.groq_api_key)
+        has_key = bool(self.openai_api_key or self.groq_api_key or self.test_provider_mode)
         
         if not has_key:
             logger.warning("No API keys configured. AI features will be unavailable.")
@@ -86,11 +88,13 @@ class Settings(BaseSettings):
         Determine which AI provider is configured
         
         Returns:
-            str: Provider name ('openai', 'groq') or None if not configured
+            str: Provider name ('test', 'openai', 'groq') or None if not configured
         """
+        if self.test_provider_mode:
+            return "test"
         if self.openai_api_key:
             return "openai"
-        elif self.groq_api_key:
+        if self.groq_api_key:
             return "groq"
         return None
 
