@@ -56,8 +56,6 @@ export class SorobanAdapter implements OnchainAdapter {
       'Test SDF Network ; September 2015',
     );
     this.errorMapper = new SorobanErrorMapper();
-
-    this.validateConfig();
   }
 
   /**
@@ -135,6 +133,7 @@ export class SorobanAdapter implements OnchainAdapter {
         'AID_ESCROW_CONTRACT_ID is not configured. Cannot proceed with contract calls.',
       );
     }
+    this.validateConfig();
   }
 
   async initEscrow(params: InitEscrowParams): Promise<InitEscrowResult> {
