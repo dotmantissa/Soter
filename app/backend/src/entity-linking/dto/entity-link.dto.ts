@@ -24,6 +24,9 @@ export interface LinkEntityResult {
   confidenceScore: number;
   matchMethod: string | null;
   isActive: boolean;
+  reviewedBy: string | null;
+  reviewedAt: Date | null;
+  reviewNotes: string | null;
   createdAt: Date;
   updatedAt: Date;
 }

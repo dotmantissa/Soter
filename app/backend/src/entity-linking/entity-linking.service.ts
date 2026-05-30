@@ -544,6 +544,9 @@ export class EntityLinkingService {
       confidenceScore: link.confidenceScore,
       matchMethod: link.matchMethod,
       isActive: link.isActive,
+      reviewedBy: link.reviewedBy,
+      reviewedAt: link.reviewedAt,
+      reviewNotes: link.reviewNotes,
       createdAt: link.createdAt,
       updatedAt: link.updatedAt,
     };
